@@ -28,26 +28,41 @@ func NewUserDB() *UserDB {
 	}
 }
 
-func (u *UserDB) CreateUser(user *User) (*User, error) {
-	_, err := u.GetUser(user)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		if err := u.dbstone.Create(&user).Error; err != nil {
-			return nil, fmt.Errorf("创建用户失败")
+func (u *UserDB) CreateUser(obj interface{}) (*User, error) {
+	switch obj {
+	case obj.(*User):
+		result, err := u.GetUser(obj)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				if err := u.dbstone.Create(obj.(*User)).Error; err != nil {
+					return nil, fmt.Errorf("创建用户失败")
+				}
+			} else {
+				return nil, fmt.Errorf("创建用户失败")
+			}
 		}
-		result, err := u.GetUser(user)
+		if result != nil {
+			return nil, fmt.Errorf("用户已存在")
+		}
+		result, err = u.GetUser(obj)
 		if err != nil {
 			return nil, err
 		}
 		return result, nil
 	}
-	return nil, fmt.Errorf("用户已存在")
+	return nil, nil
 }
-func (u *UserDB) GetUser(user *User) (*User, error) {
-	var d User
-	if err := u.dbstone.Where("mg_name = ?", user.MG_NAME).First(&d).Error; err != nil {
-		return nil, err
+func (u *UserDB) GetUser(obj interface{}) (*User, error) {
+	switch obj {
+	case obj.(*User):
+		var users User
+		result := u.dbstone.Where("mg_name = ?", obj.(*User).MG_NAME).First(&users)
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, result.Error
+		}
+		return &users, nil
 	}
-	return &d, nil
+	return nil, nil
 }
 
 //func (u *UserDB) List(ctx

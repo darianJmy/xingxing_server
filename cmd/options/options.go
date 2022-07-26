@@ -1,6 +1,7 @@
 package options
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -23,6 +24,7 @@ func (o *Options) RegisterHttpRoute() {
 	request.GET("/users", o.GetUser)
 	request.POST("/users", o.CreateUser)
 	request.GET("/metrics", o.Metrics)
+	request.POST("/upload", o.Upload)
 
 }
 
@@ -31,8 +33,40 @@ func (o *Options) Run() {
 }
 
 func (o *Options) Login(c *gin.Context) {
-
+	var user dbstone.User
+	var data dbstone.Response
+	if err := c.ShouldBindJSON(&user); err != nil {
+		data.Msg = err.Error()
+		data.Status = 400
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
+	d, err := o.UserDB.GetUser(&user)
+	if err != nil {
+		data.Msg = err.Error()
+		data.Status = 400
+		c.JSON(http.StatusBadRequest, data)
+		return
+	}
+	if user.MG_NAME == d.MG_NAME {
+		if err = bcrypt.CompareHashAndPassword([]byte(d.MG_PWD), []byte(user.MG_PWD)); err != nil  {
+			data.Msg = err.Error()
+			data.Status = 400
+			c.JSON(http.StatusBadRequest, data)
+			return
+		} else {
+			data.ID = d.MG_ID
+			data.RoleID = d.ROLE_ID
+			data.Username = d.MG_NAME
+			data.Mobile = d.MG_MOBILE
+			data.Email = d.MG_EMAIL
+			data.Msg = "登陆成功"
+			data.Status = 200
+			c.JSON(http.StatusOK, data)
+		}
+	}
 }
+
 func (o *Options) GetUsersList(c *gin.Context) {
 
 }
@@ -41,7 +75,7 @@ func (o *Options) CreateUser(c *gin.Context) {
 	var user dbstone.User
 	var data dbstone.Response
 	if err := c.ShouldBindJSON(&user); err != nil {
-		data.Msg = "创建用户失败"
+		data.Msg = err.Error()
 		data.Status = 400
 		c.JSON(http.StatusBadRequest, data)
 		return
@@ -83,37 +117,20 @@ func (o *Options) CreateUser(c *gin.Context) {
 	data.IS_Active = false
 	data.Msg = "创建用户成功"
 	data.Status = 200
-	c.JSON(http.StatusOK, &data)
-	//	hash, err := bcrypt.GenerateFromPassword([]byte(u0.Password), bcrypt.DefaultCost) //加密处理
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//encodePWD := string(hash) // 保存在数据库的密码，虽然每次生成都不同，只需保存一份即可
-	//fmt.Println(encodePWD)
-	//
-	//fmt.Println("====模拟登录====")
-	//u1 := User{}
-	//u1.Password = encodePWD //模拟从数据库中读取到的 经过bcrypt.GenerateFromPassword处理的密码值
-	//loginPwd := "pwd"       //用户登录时输入的密码
-	//// 密码验证
-	//err = bcrypt.CompareHashAndPassword([]byte(u1.Password), []byte(loginPwd)) //验证（对比）
-	//if err != nil {
-	//	fmt.Println("pwd wrong")
-	//} else {
-	//	fmt.Println("pwd ok")
-	//}
+	c.JSON(http.StatusOK, data)
 }
 
 func (o *Options) GetUser(c *gin.Context) {
 	var user dbstone.User
 	var data dbstone.Response
-	name := c.Query("name")
-	user.MG_NAME = name
+	username := c.Query("username")
+	user.MG_NAME = username
 	d, err := o.UserDB.GetUser(&user)
 	if err != nil {
 		data.Msg = err.Error()
 		data.Status = 400
 		c.JSON(http.StatusBadRequest, data)
+		return
 	}
 	data.ID = d.MG_ID
 	data.Username = d.MG_NAME
@@ -124,6 +141,23 @@ func (o *Options) GetUser(c *gin.Context) {
 	data.Status = 200
 	c.JSON(http.StatusOK, data)
 }
+
 func (o *Options) Metrics(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "200"})
+}
+
+func (o *Options) Upload(c *gin.Context) {
+	var data dbstone.Response
+	form, _ := c.MultipartForm()
+	files := form.File["upload[]"]
+	for _, file := range files {
+		fmt.Println(file.Filename)
+
+		// Upload the file to specific dst.
+		dst := fmt.Sprintf("/Users/jimingyu/Documents/stu/xingxing_server/%s",file.Filename)
+		c.SaveUploadedFile(file, dst)
+	}
+	data.Msg = fmt.Sprintf("上传文件成功")
+	data.Status = 200
+	c.JSON(http.StatusOK, data)
 }
