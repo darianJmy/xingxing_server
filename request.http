@@ -1,0 +1,28 @@
+###
+POST http://127.0.0.1:8081/apis/v1/users
+
+{
+"mg_name": "jixingxing",
+"mg_pwd": "123456",
+"mg_email": "542255405@qq.com",
+"mg_mobile": "18552437190"
+}
+
+###
+GET http://127.0.0.1:8080/apis/v1/metrics
+
+###
+GET http://127.0.0.1:8081/metrics
+
+###
+POST http://127.0.0.1:8081/apis/v1/users
+
+{
+"mg_name": "jixing12sasa",
+"mg_pwd": "123456",
+"mg_email": "542255405@qq.com",
+"mg_mobile": "18552437190"
+}
+
+###
+GET http://127.0.0.1:8081/apis/v1/users?name=jixingxingss
