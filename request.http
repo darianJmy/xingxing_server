@@ -15,22 +15,54 @@ GET http://127.0.0.1:8080/apis/v1/metrics
 GET http://127.0.0.1:8081/metrics
 
 ###
-POST http://127.0.0.1:8081/apis/v1/users
+POST http://127.0.0.1:8081/api/v1/users
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY1OTY5NDg3MCwiaWF0IjoxNjU5MDkwMDcwLCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.B6GSXtZQUfogCXvUqx6m2U28osuEfvuaZH69gh_LHsk
 
 {
-"mg_name": "jixing12sasssa",
-"mg_pwd": "123456",
-"mg_email": "542255405@qq.com",
-"mg_mobile": "18552437190"
+"username": "admin",
+"password": "123456",
+"email": "542255405@qq.com",
+"mobile": "18552437190"
 }
 
 ###
 GET http://127.0.0.1:8081/apis/v1/users?username=jixing12sasa
 
 ###
-POST http://127.0.0.1:8081/apis/v1/login
+POST http://127.0.0.1:8081/api/v1/login
 
 {
-"mg_name": "jixing12sasssa",
-"mg_pwd": "123456"
+"username": "admin",
+"password": "123456"
 }
+
+###
+POST http://127.0.0.1:8081/api/v1/login
+
+{
+"username": "admin",
+"password": "123456"
+}
+
+###
+POST http://127.0.0.1:8081/api/v1/upload
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY1OTY5NDg3MCwiaWF0IjoxNjU5MDkwMDcwLCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.B6GSXtZQUfogCXvUqx6m2U28osuEfvuaZH69gh_LHsk
+{
+"username": "admin",
+"password": "123456"
+}
+
+###
+POST http://10.50.7.15:8081/apis/v1/login
+
+{
+"username": "admin",
+"password": "123456"
+}
+
+###
+GET http://127.0.0.1:8080/get
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY1OTY4MTU0NCwiaWF0IjoxNjU5MDc2NzQ0LCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0._PxiZ13qDLI_CK8-wp_QXWchiz_1FOvZ5XL-5mi5NPo
+
+###
+GET http://127.0.0.1:8080/set

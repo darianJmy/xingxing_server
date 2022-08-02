@@ -10,7 +10,7 @@ import (
 var mysql *Mysqls
 var DB *gorm.DB
 
-type UserDB struct {
+type MysqlDB struct {
 	dbstone *gorm.DB
 }
 
@@ -22,49 +22,59 @@ type Mysqls struct {
 	DBName   string `yaml:"name"`
 }
 
-func NewUserDB() *UserDB {
-	return &UserDB{
+func NewMysqlDB() *MysqlDB {
+	return &MysqlDB{
 		dbstone: DB,
 	}
 }
 
-func (u *UserDB) CreateUser(obj interface{}) (*User, error) {
-	switch obj {
-	case obj.(*User):
-		result, err := u.GetUser(obj)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				if err := u.dbstone.Create(obj.(*User)).Error; err != nil {
-					return nil, fmt.Errorf("创建用户失败")
-				}
-			} else {
-				return nil, fmt.Errorf("创建用户失败")
-			}
-		}
-		if result != nil {
-			return nil, fmt.Errorf("用户已存在")
-		}
-		result, err = u.GetUser(obj)
-		if err != nil {
-			return nil, err
-		}
-		return result, nil
+func (u *MysqlDB) CreateUser(createUser *CreateUser) (*User, error) {
+	var user User
+	result, err := u.GetUser(createUser.Username)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
-}
-func (u *UserDB) GetUser(obj interface{}) (*User, error) {
-	switch obj {
-	case obj.(*User):
-		var users User
-		result := u.dbstone.Where("mg_name = ?", obj.(*User).MG_NAME).First(&users)
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, result.Error
-		}
-		return &users, nil
+	if result != nil {
+		return nil, fmt.Errorf("用户已存在")
 	}
-	return nil, nil
+	user.MG_NAME = createUser.Username
+	user.MG_PWD = createUser.Password
+	user.MG_MOBILE = createUser.Mobile
+	user.MG_EMAIL = createUser.Email
+
+	if err := u.dbstone.Create(&user).Error; err != nil {
+		return nil, fmt.Errorf("创建用户失败")
+	}
+	result, err = u.GetUser(createUser.Username)
+	if err != nil {
+		return nil, fmt.Errorf("检查用户失败")
+	}
+	return result, nil
 }
 
+func (u *MysqlDB) GetUser(username string) (*User, error) {
+	var user User
+	result := u.dbstone.Where("mg_name = ?",username).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("获取用户失败")
+	}
+	return &user, nil
+}
+
+func (u *MysqlDB) Login(username string) (*User, error) {
+	var user User
+	result := u.dbstone.Where("mg_name = ?",username).First(&user)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("用户不存在")
+		}
+		return nil, fmt.Errorf("获取用户失败")
+	}
+	return &user, nil
+}
 //func (u *UserDB) List(ctx
 //context.Context, name
 //string) (*[]models.User, error) {

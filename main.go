@@ -3,16 +3,16 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"xingxing_server/cmd/dbstone"
-	"xingxing_server/cmd/options"
+	gin2 "xingxing_server/cmd/gin"
 )
 
-func NewHttpServer(addr string) *options.Options {
+func NewHttpServer(addr string) *gin2.Options {
 	gin.SetMode(gin.DebugMode)
 
-	o := options.Options{
-		Addr:   addr,
-		Engine: gin.Default(),
-		UserDB: dbstone.NewUserDB(),
+	o := gin2.Options{
+		Addr:    addr,
+		Engine:  gin.Default(),
+		MysqlDB: dbstone.NewMysqlDB(),
 	}
 	o.RegisterHttpRoute()
 	return &o
