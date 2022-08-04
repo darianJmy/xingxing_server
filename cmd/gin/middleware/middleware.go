@@ -1,10 +1,14 @@
 package middleware
 
 import (
+	"encoding/json"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
+	"xingxing_server/cmd/types"
 )
 
 var jwtkey = []byte("MyNameIsJiXingXing")
@@ -20,7 +24,7 @@ func Cors() gin.HandlerFunc {
 		method := c.Request.Method
 		origin := c.Request.Header.Get("Origin")
 		if origin != "" {
-			c.Header("Access-Control-Allow-Origin", "*")  // 可将将 * 替换为指定的域名
+			c.Header("Access-Control-Allow-Origin", "*") // 可将将 * 替换为指定的域名
 			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
 			c.Header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization")
 			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Cache-Control, Content-Language, Content-Type")
@@ -58,13 +62,13 @@ func HandleToken() gin.HandlerFunc {
 
 func SetToken() (string, error) {
 	expireTime := time.Now().Add(7 * 24 * time.Hour)
-	claims := &Claims {
+	claims := &Claims{
 		UserId: 2,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(), //过期时间
-			IssuedAt: time.Now().Unix(),
-			Issuer: "127.0.0.1",
-			Subject: "user token",
+			IssuedAt:  time.Now().Unix(),
+			Issuer:    "127.0.0.1",
+			Subject:   "user token",
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -80,4 +84,30 @@ func ParseToken(tokenString string) (*jwt.Token, *Claims, error) {
 		return jwtkey, nil
 	})
 	return token, Claims, err
+}
+
+func LoginUPMS() (*string, error) {
+	var user = map[string]string{
+		"email":    "mingyu.ji@sincerecloud.com",
+		"password": "ckr2fB8UpG15qWTmhxe2aQ==",
+	}
+	bytes, _ := json.Marshal(user)
+	reqBody := strings.NewReader(string(bytes))
+
+	req, err := http.NewRequest("POST", "http://sbx-flora.voneyun.com/upms/user/login", reqBody)
+	req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+	var client = &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var result types.UPMSResp
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+	return &result.Data.Token, nil
 }

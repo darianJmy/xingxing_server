@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"xingxing_server/cmd/types"
 )
 
 var mysql *Mysqls
@@ -28,8 +29,8 @@ func NewMysqlDB() *MysqlDB {
 	}
 }
 
-func (u *MysqlDB) CreateUser(createUser *CreateUser) (*User, error) {
-	var user User
+func (u *MysqlDB) CreateUser(createUser *types.CreateUser) (*types.User, error) {
+	var user types.User
 	result, err := u.GetUser(createUser.Username)
 	if err != nil {
 		return nil, err
@@ -52,9 +53,9 @@ func (u *MysqlDB) CreateUser(createUser *CreateUser) (*User, error) {
 	return result, nil
 }
 
-func (u *MysqlDB) GetUser(username string) (*User, error) {
-	var user User
-	result := u.dbstone.Where("mg_name = ?",username).First(&user)
+func (u *MysqlDB) GetUser(username string) (*types.User, error) {
+	var user types.User
+	result := u.dbstone.Where("mg_name = ?", username).First(&user)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -64,9 +65,9 @@ func (u *MysqlDB) GetUser(username string) (*User, error) {
 	return &user, nil
 }
 
-func (u *MysqlDB) Login(username string) (*User, error) {
-	var user User
-	result := u.dbstone.Where("mg_name = ?",username).First(&user)
+func (u *MysqlDB) Login(username string) (*types.User, error) {
+	var user types.User
+	result := u.dbstone.Where("mg_name = ?", username).First(&user)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, fmt.Errorf("用户不存在")
@@ -75,6 +76,7 @@ func (u *MysqlDB) Login(username string) (*User, error) {
 	}
 	return &user, nil
 }
+
 //func (u *UserDB) List(ctx
 //context.Context, name
 //string) (*[]models.User, error) {
@@ -103,7 +105,7 @@ func (u *MysqlDB) Login(username string) (*User, error) {
 
 func init() {
 	var err error
-	var user User
+	var user types.User
 	dbConnection := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local&timeout=30s",
 		"root",
 		"root",

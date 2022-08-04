@@ -1,4 +1,4 @@
-package dbstone
+package types
 
 type User struct {
 	MG_ID     int    `json:"mg_id"`

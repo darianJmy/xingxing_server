@@ -1,12 +1,12 @@
 package main
 
 import (
-"fmt"
-"net/http"
-"time"
+	"fmt"
+	"net/http"
+	"time"
 
-"github.com/dgrijalva/jwt-go"
-"github.com/gin-gonic/gin"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 )
 
 //自定义一个字符串

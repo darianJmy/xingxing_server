@@ -1,18 +1,27 @@
 package gin
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
+	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
+	"strings"
 	"xingxing_server/cmd/dbstone"
 	"xingxing_server/cmd/gin/middleware"
+	"xingxing_server/cmd/k8s"
+	"xingxing_server/cmd/types"
 )
+
+var client = k8s.InitClientSet()
 
 type Options struct {
 	MysqlDB *dbstone.MysqlDB
-	Engine *gin.Engine
-	Addr   string
+	Engine  *gin.Engine
+	Addr    string
 }
 
 func (o *Options) RegisterHttpRoute() {
@@ -25,7 +34,8 @@ func (o *Options) RegisterHttpRoute() {
 	request.GET("/users", o.GetUser)
 	request.POST("/users", o.CreateUser)
 	request.GET("/metrics", o.Metrics)
-
+	request.GET("/podList/:namespace/:projectName", o.PodList)
+	request.GET("/projectList", o.ProjectList)
 
 }
 
@@ -34,8 +44,8 @@ func (o *Options) Run() {
 }
 
 func (o *Options) Login(c *gin.Context) {
-	var loginUser dbstone.LoginUser
-	var loginResp dbstone.LoginResp
+	var loginUser types.LoginUser
+	var loginResp types.LoginResp
 
 	if err := c.ShouldBindJSON(&loginUser); err != nil {
 		loginResp.Meta.Msg = fmt.Errorf("请求参数错误").Error()
@@ -84,8 +94,8 @@ func (o *Options) GetUsersList(c *gin.Context) {
 }
 
 func (o *Options) CreateUser(c *gin.Context) {
-	var createUser dbstone.CreateUser
-	var createUserResp dbstone.CreateUserResp
+	var createUser types.CreateUser
+	var createUserResp types.CreateUserResp
 	if err := c.ShouldBindJSON(&createUser); err != nil {
 		createUserResp.Meta.Msg = fmt.Errorf("请求参数错误").Error()
 		createUserResp.Meta.Status = 400
@@ -126,9 +136,9 @@ func (o *Options) Metrics(c *gin.Context) {
 }
 
 func (o *Options) Upload(c *gin.Context) {
-	var uploadResp dbstone.UpLoadResp
+	var uploadResp types.UpLoadResp
 	file, _ := c.FormFile("file")
-	dst := fmt.Sprintf("/Users/jimingyu/Documents/stu/xingxing_server/%s",file.Filename)
+	dst := fmt.Sprintf("/Users/jimingyu/Documents/stu/xingxing_server/%s", file.Filename)
 	if err := c.SaveUploadedFile(file, dst); err != nil {
 		uploadResp.Meta.Msg = fmt.Sprintf("上传文件失败")
 		uploadResp.Meta.Status = 400
@@ -141,5 +151,64 @@ func (o *Options) Upload(c *gin.Context) {
 }
 
 func (o *Options) Menus(c *gin.Context) {
+}
 
+func (o *Options) PodList(c *gin.Context) {
+	var podListResp types.PodListResp
+	var List types.PodList
+	var Children types.Children
+	namespace := c.Param("namespace")
+	projectName := c.Param("projectName")
+	podList, err := client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "获取pod列表失败", "status": http.StatusBadRequest}})
+		return
+	}
+	for _, v := range podList.Items {
+		for _, i := range v.ObjectMeta.OwnerReferences {
+			_, err := client.AppsV1().ReplicaSets(namespace).Get(context.Background(), i.Name, metav1.GetOptions{})
+			if err != nil {
+				continue
+			}
+
+			OwnerNameList := strings.Split(i.Name, "-")
+			OwnerName := strings.TrimSuffix(i.Name, OwnerNameList[len(OwnerNameList)-1])
+			OwnerName = strings.TrimSuffix(OwnerName, "-")
+			if projectName == OwnerName {
+				List.ProjectName = projectName
+				Children.PodName = v.Name
+				Children.PodIP = v.Status.PodIP
+				List.Children = append(List.Children, Children)
+			}
+		}
+	}
+	podListResp.Data = append(podListResp.Data, List)
+	podListResp.Meta.Msg = fmt.Sprintf("获取Pod列表成功")
+	podListResp.Meta.Status = http.StatusOK
+	c.JSON(http.StatusOK, podListResp)
+}
+
+func (o *Options) ProjectList(c *gin.Context) {
+	token, err := middleware.LoginUPMS()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		return
+	}
+	req, err := http.NewRequest("GET", "http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo", nil)
+	req.Header.Add("Authorization", *token)
+	req.Header.Add("TENANT-ID", "1")
+	var client = &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		return
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		return
+	}
+	var serviceManagerResp types.ServiceManagerResp
+	json.Unmarshal(body, &serviceManagerResp)
+	c.JSON(200, serviceManagerResp)
 }
