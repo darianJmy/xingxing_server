@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
@@ -86,15 +87,34 @@ func ParseToken(tokenString string) (*jwt.Token, *Claims, error) {
 	return token, Claims, err
 }
 
-func LoginUPMS() (*string, error) {
-	var user = map[string]string{
-		"email":    "mingyu.ji@sincerecloud.com",
-		"password": "ckr2fB8UpG15qWTmhxe2aQ==",
+func LoginUPMS(envName string) (*string, error) {
+	var req *http.Request
+	var err error
+	user := make(map[string]string)
+	if envName == "sbx" {
+		user["email"] = "mingyu.ji@sincerecloud.com"
+		user["password"] = "ckr2fB8UpG15qWTmhxe2aQ=="
+	} else if envName == "sit" {
+		user["email"] = "mingyu.ji@sincerecloud.com"
+		user["password"] = "m6yJLj7ghLE5k3EupsLzAQ=="
+	} else {
+		return nil, fmt.Errorf("没有此环境")
 	}
+
 	bytes, _ := json.Marshal(user)
 	reqBody := strings.NewReader(string(bytes))
 
-	req, err := http.NewRequest("POST", "http://sbx-flora.voneyun.com/upms/user/login", reqBody)
+	if envName == "sbx" {
+		req, err = http.NewRequest("POST", "http://sbx-flora.voneyun.com/upms/user/login", reqBody)
+		if err != nil {
+			return nil, err
+		}
+	} else if envName == "sit" {
+		req, err = http.NewRequest("POST", "http://sit-flora.voneyun.com/upms/user/login", reqBody)
+		if err != nil {
+			return nil, err
+		}
+	}
 	req.Header.Add("Content-Type", "application/json;charset=UTF-8")
 	var client = &http.Client{}
 	resp, err := client.Do(req)

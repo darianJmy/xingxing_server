@@ -72,8 +72,8 @@ GET http://127.0.0.1:8081/api/v1/get
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDA5NTMzNSwiaWF0IjoxNjU5NDkwNTM1LCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.fQ8IbJBkvu1dphgpJCJ7EEb5vSxOPUib2Nqt-LZypTs
 
 ###
-GET http://127.0.0.1:8081/api/v1/projectList
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDE5Nzc1NywiaWF0IjoxNjU5NTkyOTU3LCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.vK1m3Oww4FtmL08x-8eW0a1tMxOsbTedsYQTFETBWIA
+GET http://127.0.0.1:8081/api/v1/getProjectDropVo
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDYxNDEwNiwiaWF0IjoxNjYwMDA5MzA2LCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.HOICWK0svvSYBn3UA110-OlFKWQrMuhyQjZ_SK0tSvM
 ###
 GET http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo
 Authorization: 693ff99503034a37a8efbc75ebc47549
@@ -82,8 +82,8 @@ TENANT-ID: 131
 GET http://micro-core-web-sbx.voneyun.com/#/micro/adan/servicegovernance/servicemanage
 
 ###
-GET http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo
-Authorization: e3370bc2ba5149e5acc6a57a2ff5861c
+GET http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo/sbx
+Authorization: 6b7733e1fbeb41bb86a2b06a9fd7485d
 TENANT-ID: 1
 
 ###
@@ -94,3 +94,13 @@ Content-Type: application/json;charset=UTF-8
 "email": "mingyu.ji@sincerecloud.com",
 "password": "ckr2fB8UpG15qWTmhxe2aQ=="
 }
+
+###
+GET http://sbx-newnoa.voneyun.com/govern/services/page?projectId=11
+Authorization: 6b7733e1fbeb41bb86a2b06a9fd7485d
+TENANT-ID: 1
+
+
+###
+GET http://127.0.0.1:8081/api/v1/getProjectDropVo/sbx
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDU1Njg2OCwiaWF0IjoxNjU5OTUyMDY4LCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.it69Y7LZrFN3_eH5ZCmlfHEDGw1c2mFGGvu4n_rJeK0

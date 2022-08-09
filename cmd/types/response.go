@@ -53,8 +53,14 @@ type UpLoadResp struct {
 }
 
 type PodList struct {
-	ProjectName string     `json:"projectName"`
-	Children    []Children `json:"children"`
+	PodName string `json:"podName"`
+	PodIP   string `json:"podIp"`
+	PodPort string `json:"podPort"`
+	PodStatus string `json:"podStatus"`
+	HostIP string `json:"hostIp"`
+	Namespace string `json:"namespaceName"`
+	ProjectName string `json:"projectName"`
+	OwnerName string `json:"ownerName"`
 }
 
 type PodListResp struct {
@@ -75,17 +81,44 @@ type UPMSBodyData struct {
 	Token string `json:"token"`
 }
 
-type ServiceManagerResp struct {
+type ProjectDropVoResp struct {
 	Status      int                  `json:"status"`
 	StatusCode  string               `json:"statusCode"`
 	Msg         string               `json:"msg"`
 	ResultType  int                  `json:"resultType"`
 	Timestamp   string               `json:"timestamp"`
 	ElapsedTime int                  `json:"elapsedTime"`
-	Data        []ServiceManagerData `json:"data"`
+	Data        []ProjectDropVoData `json:"data"`
 }
 
-type ServiceManagerData struct {
+type ProjectDropVoData struct {
 	ProjectId   string `json:"projectId"`
 	ProjectName string `json:"projectName"`
+}
+
+type ProjectServicesResp struct {
+	Status int `json:"status"`
+	StatusCode string `json:"statusCode"`
+	Msg string `json:"msg"`
+	ResultType int `json:"resultType"`
+	Timestamp string `json:"timestamp"`
+	ElapsedTime int `json:"elapsedTime"`
+	Data ProjectServicesData `json:"data"`
+
+}
+
+type ProjectServicesData struct {
+	Total string `json:"total"`
+	Records []ProjectServicesRecords `json:"records"`
+}
+
+type ProjectServicesRecords struct {
+	ID int `json:"id"`
+	ServiceId string `json:"serviceId"`
+	ServiceName string `json:"serviceName"`
+	ServiceDescription string `json:"serviceDescription"`
+	ProjectName string `json:"projectName"`
+	NamespaceName string `json:"namespaceName"`
+	CreateTime string `json:"createTime"`
+	LastUpdateTime string `json:"lastUpdateTime"`
 }

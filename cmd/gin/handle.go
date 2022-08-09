@@ -1,14 +1,17 @@
 package gin
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
+	"strconv"
 	"strings"
 	"xingxing_server/cmd/dbstone"
 	"xingxing_server/cmd/gin/middleware"
@@ -16,7 +19,8 @@ import (
 	"xingxing_server/cmd/types"
 )
 
-var client = k8s.InitClientSet()
+var sitClient = k8s.SitInitClientSet()
+var sbxClient = k8s.SbxInitClientSet()
 
 type Options struct {
 	MysqlDB *dbstone.MysqlDB
@@ -34,8 +38,11 @@ func (o *Options) RegisterHttpRoute() {
 	request.GET("/users", o.GetUser)
 	request.POST("/users", o.CreateUser)
 	request.GET("/metrics", o.Metrics)
-	request.GET("/podList/:namespace/:projectName", o.PodList)
-	request.GET("/projectList", o.ProjectList)
+	request.GET("/sbxPodList/:namespace/:projectName", o.SbxPodList)
+	request.GET("/sitPodList/:namespace/:projectName", o.SitPodList)
+	request.GET("/getPodLogs/:namespace/:podName", o.GetPodLogs)
+	request.GET("/getProjectDropVo/:envName", o.GetProjectDropVo)
+	request.GET("/getProjectServices/:envName", o.GetProjectServices)
 
 }
 
@@ -153,20 +160,19 @@ func (o *Options) Upload(c *gin.Context) {
 func (o *Options) Menus(c *gin.Context) {
 }
 
-func (o *Options) PodList(c *gin.Context) {
+func (o *Options) SbxPodList(c *gin.Context) {
 	var podListResp types.PodListResp
 	var List types.PodList
-	var Children types.Children
 	namespace := c.Param("namespace")
 	projectName := c.Param("projectName")
-	podList, err := client.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
+	podList, err := sbxClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "获取pod列表失败", "status": http.StatusBadRequest}})
 		return
 	}
 	for _, v := range podList.Items {
 		for _, i := range v.ObjectMeta.OwnerReferences {
-			_, err := client.AppsV1().ReplicaSets(namespace).Get(context.Background(), i.Name, metav1.GetOptions{})
+			_, err := sbxClient.AppsV1().ReplicaSets(namespace).Get(context.Background(), i.Name, metav1.GetOptions{})
 			if err != nil {
 				continue
 			}
@@ -174,27 +180,81 @@ func (o *Options) PodList(c *gin.Context) {
 			OwnerNameList := strings.Split(i.Name, "-")
 			OwnerName := strings.TrimSuffix(i.Name, OwnerNameList[len(OwnerNameList)-1])
 			OwnerName = strings.TrimSuffix(OwnerName, "-")
-			if projectName == OwnerName {
-				List.ProjectName = projectName
-				Children.PodName = v.Name
-				Children.PodIP = v.Status.PodIP
-				List.Children = append(List.Children, Children)
+			projectNameList := strings.Split(projectName, "-")
+			if projectNameList[0] == OwnerNameList[0] &&
+				projectNameList[1] == OwnerNameList[1] {
+				List.PodName = v.Name
+				List.PodIP = v.Status.PodIP
+				List.HostIP = v.Status.HostIP
+				List.PodStatus = string(v.Status.Phase)
+				List.Namespace = v.Namespace
+				List.ProjectName = projectNameList[0]
+				List.OwnerName = OwnerName
+				podListResp.Data = append(podListResp.Data, List)
 			}
 		}
 	}
-	podListResp.Data = append(podListResp.Data, List)
 	podListResp.Meta.Msg = fmt.Sprintf("获取Pod列表成功")
 	podListResp.Meta.Status = http.StatusOK
 	c.JSON(http.StatusOK, podListResp)
 }
 
-func (o *Options) ProjectList(c *gin.Context) {
-	token, err := middleware.LoginUPMS()
+func (o *Options) SitPodList(c *gin.Context) {
+	var podListResp types.PodListResp
+	var List types.PodList
+	namespace := c.Param("namespace")
+	projectName := c.Param("projectName")
+	podList, err := sitClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "获取pod列表失败", "status": http.StatusBadRequest}})
 		return
 	}
-	req, err := http.NewRequest("GET", "http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo", nil)
+	for _, v := range podList.Items {
+		for _, i := range v.ObjectMeta.OwnerReferences {
+			_, err := sitClient.AppsV1().ReplicaSets(namespace).Get(context.Background(), i.Name, metav1.GetOptions{})
+			if err != nil {
+				continue
+			}
+
+			OwnerNameList := strings.Split(i.Name, "-")
+			OwnerName := strings.TrimSuffix(i.Name, OwnerNameList[len(OwnerNameList)-1])
+			OwnerName = strings.TrimSuffix(OwnerName, "-")
+			projectNameList := strings.Split(projectName, "-")
+			if projectNameList[0] == OwnerNameList[0] &&
+				projectNameList[1] == OwnerNameList[1] {
+				List.PodName = v.Name
+				List.PodIP = v.Status.PodIP
+				List.HostIP = v.Status.HostIP
+				List.PodStatus = string(v.Status.Phase)
+				List.Namespace = v.Namespace
+				List.ProjectName = projectNameList[0]
+				List.OwnerName = OwnerName
+				podListResp.Data = append(podListResp.Data, List)
+			}
+		}
+	}
+	podListResp.Meta.Msg = fmt.Sprintf("获取Pod列表成功")
+	podListResp.Meta.Status = http.StatusOK
+	c.JSON(http.StatusOK, podListResp)
+}
+
+func (o *Options) GetProjectDropVo(c *gin.Context) {
+	envName := c.Param("envName")
+	if envName == "" {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "没有此环境", "status": http.StatusBadRequest}})
+		return
+	}
+	token, err := middleware.LoginUPMS(envName)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": err.Error(), "status": http.StatusBadRequest}})
+		return
+	}
+	var req *http.Request
+	if envName == "sbx" {
+		req, err = http.NewRequest("GET", "http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo", nil)
+	} else {
+		req, err = http.NewRequest("GET", "http://sit-newnoa.voneyun.com/govern/project/getProjectDropVo", nil)
+	}
 	req.Header.Add("Authorization", *token)
 	req.Header.Add("TENANT-ID", "1")
 	var client = &http.Client{}
@@ -208,7 +268,103 @@ func (o *Options) ProjectList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
 		return
 	}
-	var serviceManagerResp types.ServiceManagerResp
-	json.Unmarshal(body, &serviceManagerResp)
-	c.JSON(200, serviceManagerResp)
+	var projectDropVoResp types.ProjectDropVoResp
+	json.Unmarshal(body, &projectDropVoResp)
+	c.JSON(200, projectDropVoResp)
+}
+
+func (o *Options) GetProjectServices(c *gin.Context) {
+	envName := c.Param("envName")
+	if envName == "" {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "没有此环境", "status": http.StatusBadRequest}})
+		return
+	}
+
+	var url string
+	var token *string
+	var err error
+	projectId := c.Query("projectId")
+	if envName == "sbx" && projectId != "" {
+		url = fmt.Sprintf("http://sbx-newnoa.voneyun.com/govern/services/page?projectId=%s", projectId)
+		token, err = middleware.LoginUPMS(envName)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+			return
+		}
+	} else if envName == "sit" && projectId != "" {
+		url = fmt.Sprintf("http://sit-newnoa.voneyun.com/govern/services/page?projectId=%s", projectId)
+		token, err = middleware.LoginUPMS(envName)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+			return
+		}
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		return
+	}
+
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", *token)
+	req.Header.Add("TENANT-ID", "1")
+	var client = &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		return
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "认证失败", "status": http.StatusBadRequest}})
+		return
+	}
+	var projectServicesResp  types.ProjectServicesResp
+	json.Unmarshal(body, &projectServicesResp)
+	c.JSON(200, projectServicesResp)
+}
+
+func (o *Options) GetPodLogs(c *gin.Context) {
+	namespace := c.Param("namespace")
+	podName := c.Param("podName")
+	//container := c.Query("container")
+	tailLines, _ := strconv.ParseInt(c.DefaultQuery("tailLines", "500"), 10, 64)
+	timeStamps, _ := strconv.ParseBool(c.DefaultQuery("timeStamps", "true"))
+	previous, _ := strconv.ParseBool(c.DefaultQuery("previous", "false"))
+
+	if namespace == "" || podName == "" {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "获取日志失败", "status": http.StatusBadRequest}})
+		return
+	}
+
+	kubeLogger, err := k8s.NewKubeLogger(c.Writer, c.Request, nil)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "升级日志失败", "status": http.StatusBadRequest}})
+		return
+	}
+
+	opts := corev1.PodLogOptions{
+		Timestamps: timeStamps,
+		Previous: previous,
+		Follow: true,
+		TailLines: &tailLines,
+	}
+	req := sbxClient.CoreV1().Pods(namespace).GetLogs(podName, &opts)
+	stream, err := req.Stream(context.Background())
+	if err != nil {
+		kubeLogger.Write([]byte(err.Error()))
+		return
+	}
+	defer stream.Close()
+
+	buf := bufio.NewReader(stream)
+	for {
+		bytes, err := buf.ReadBytes('\n')
+		if err != nil {
+			kubeLogger.Write([]byte(err.Error()))
+			return
+		}
+		if err := kubeLogger.Write(bytes); err != nil {
+			kubeLogger.Write([]byte(err.Error()))
+			return
+		}
+	}
 }
