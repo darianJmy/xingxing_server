@@ -82,8 +82,8 @@ TENANT-ID: 131
 GET http://micro-core-web-sbx.voneyun.com/#/micro/adan/servicegovernance/servicemanage
 
 ###
-GET http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo/sbx
-Authorization: 6b7733e1fbeb41bb86a2b06a9fd7485d
+GET http://sbx-newnoa.voneyun.com/govern/project/getProjectDropVo
+Authorization: 47a6922cd38240329807362ce084c090
 TENANT-ID: 1
 
 ###
@@ -96,11 +96,27 @@ Content-Type: application/json;charset=UTF-8
 }
 
 ###
-GET http://sbx-newnoa.voneyun.com/govern/services/page?projectId=11
-Authorization: 6b7733e1fbeb41bb86a2b06a9fd7485d
+GET http://sbx-newnoa.voneyun.com/govern/services/page?projectId=42
+Authorization: 47a6922cd38240329807362ce084c090
 TENANT-ID: 1
 
 
 ###
 GET http://127.0.0.1:8081/api/v1/getProjectDropVo/sbx
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDU1Njg2OCwiaWF0IjoxNjU5OTUyMDY4LCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.it69Y7LZrFN3_eH5ZCmlfHEDGw1c2mFGGvu4n_rJeK0
+
+###
+GET http://127.0.0.1:8081/api/v1/sbxPodList/sbx/flora-upms-service
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDcwMjMzMywiaWF0IjoxNjYwMDk3NTMzLCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.TeP-CZJraFOK2RAp0UCp64XQ4oghMlGHrg45ccL-Wpw
+
+###
+GET http://127.0.0.1:8081/api/v1/sbxPodList/sbx/newnoa-metrics-service
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDcwMjMzMywiaWF0IjoxNjYwMDk3NTMzLCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.TeP-CZJraFOK2RAp0UCp64XQ4oghMlGHrg45ccL-Wpw
+
+###
+GET http://127.0.0.1:8081/api/v1/getProjectServices/sbx?projectId=11
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDcwMjMzMywiaWF0IjoxNjYwMDk3NTMzLCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.TeP-CZJraFOK2RAp0UCp64XQ4oghMlGHrg45ccL-Wpw
+
+###
+GET http://127.0.0.1:8081/api/v1/sitPodList/sit/newnoa-metrics-service
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySWQiOjIsImV4cCI6MTY2MDcwMjMzMywiaWF0IjoxNjYwMDk3NTMzLCJpc3MiOiIxMjcuMC4wLjEiLCJzdWIiOiJ1c2VyIHRva2VuIn0.TeP-CZJraFOK2RAp0UCp64XQ4oghMlGHrg45ccL-Wpw

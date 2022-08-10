@@ -38,8 +38,8 @@ func (o *Options) RegisterHttpRoute() {
 	request.GET("/users", o.GetUser)
 	request.POST("/users", o.CreateUser)
 	request.GET("/metrics", o.Metrics)
-	request.GET("/sbxPodList/:namespace/:projectName", o.SbxPodList)
-	request.GET("/sitPodList/:namespace/:projectName", o.SitPodList)
+	request.GET("/sbxPodList/:namespace/:fullServiceName", o.SbxPodList)
+	request.GET("/sitPodList/:namespace/:fullServiceName", o.SitPodList)
 	request.GET("/getPodLogs/:namespace/:podName", o.GetPodLogs)
 	request.GET("/getProjectDropVo/:envName", o.GetProjectDropVo)
 	request.GET("/getProjectServices/:envName", o.GetProjectServices)
@@ -164,32 +164,23 @@ func (o *Options) SbxPodList(c *gin.Context) {
 	var podListResp types.PodListResp
 	var List types.PodList
 	namespace := c.Param("namespace")
-	projectName := c.Param("projectName")
+	fullServiceName := c.Param("fullServiceName")
 	podList, err := sbxClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "获取pod列表失败", "status": http.StatusBadRequest}})
 		return
 	}
+	projectName := strings.Split(fullServiceName, "-")
 	for _, v := range podList.Items {
 		for _, i := range v.ObjectMeta.OwnerReferences {
-			_, err := sbxClient.AppsV1().ReplicaSets(namespace).Get(context.Background(), i.Name, metav1.GetOptions{})
-			if err != nil {
-				continue
-			}
-
-			OwnerNameList := strings.Split(i.Name, "-")
-			OwnerName := strings.TrimSuffix(i.Name, OwnerNameList[len(OwnerNameList)-1])
-			OwnerName = strings.TrimSuffix(OwnerName, "-")
-			projectNameList := strings.Split(projectName, "-")
-			if projectNameList[0] == OwnerNameList[0] &&
-				projectNameList[1] == OwnerNameList[1] {
+			if strings.Contains(i.Name, fullServiceName) {
 				List.PodName = v.Name
 				List.PodIP = v.Status.PodIP
 				List.HostIP = v.Status.HostIP
 				List.PodStatus = string(v.Status.Phase)
 				List.Namespace = v.Namespace
-				List.ProjectName = projectNameList[0]
-				List.OwnerName = OwnerName
+				List.OwnerName = fullServiceName
+				List.ProjectName = projectName[0]
 				podListResp.Data = append(podListResp.Data, List)
 			}
 		}
@@ -203,32 +194,23 @@ func (o *Options) SitPodList(c *gin.Context) {
 	var podListResp types.PodListResp
 	var List types.PodList
 	namespace := c.Param("namespace")
-	projectName := c.Param("projectName")
+	fullServiceName := c.Param("fullServiceName")
 	podList, err := sitClient.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"data": nil, "meta": gin.H{"msg": "获取pod列表失败", "status": http.StatusBadRequest}})
 		return
 	}
+	projectName := strings.Split(fullServiceName, "-")
 	for _, v := range podList.Items {
 		for _, i := range v.ObjectMeta.OwnerReferences {
-			_, err := sitClient.AppsV1().ReplicaSets(namespace).Get(context.Background(), i.Name, metav1.GetOptions{})
-			if err != nil {
-				continue
-			}
-
-			OwnerNameList := strings.Split(i.Name, "-")
-			OwnerName := strings.TrimSuffix(i.Name, OwnerNameList[len(OwnerNameList)-1])
-			OwnerName = strings.TrimSuffix(OwnerName, "-")
-			projectNameList := strings.Split(projectName, "-")
-			if projectNameList[0] == OwnerNameList[0] &&
-				projectNameList[1] == OwnerNameList[1] {
+			if strings.Contains(i.Name, fullServiceName) {
 				List.PodName = v.Name
 				List.PodIP = v.Status.PodIP
 				List.HostIP = v.Status.HostIP
 				List.PodStatus = string(v.Status.Phase)
 				List.Namespace = v.Namespace
-				List.ProjectName = projectNameList[0]
-				List.OwnerName = OwnerName
+				List.OwnerName = fullServiceName
+				List.ProjectName = projectName[0]
 				podListResp.Data = append(podListResp.Data, List)
 			}
 		}

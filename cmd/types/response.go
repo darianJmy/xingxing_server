@@ -116,6 +116,7 @@ type ProjectServicesRecords struct {
 	ID int `json:"id"`
 	ServiceId string `json:"serviceId"`
 	ServiceName string `json:"serviceName"`
+	FullServiceName string `json:"fullServiceName"`
 	ServiceDescription string `json:"serviceDescription"`
 	ProjectName string `json:"projectName"`
 	NamespaceName string `json:"namespaceName"`
